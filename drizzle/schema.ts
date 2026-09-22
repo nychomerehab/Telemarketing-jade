@@ -12,15 +12,39 @@ import {
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  openId: varchar("openId", { length: 128 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
+  username: varchar("username", { length: 80 }).unique(),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  status: mysqlEnum("status", ["active", "inactive"]).default("active").notNull(),
+  contactNumber: varchar("contactNumber", { length: 40 }),
+  dateStarted: date("dateStarted", { mode: "string" }),
+  notes: text("notes"),
+  createdBy: int("createdBy"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  sessionVersion: int("sessionVersion").default(0).notNull(),
 });
+
+export const auditLogs = mysqlTable(
+  "audit_logs",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    adminId: int("adminId").notNull(),
+    action: varchar("action", { length: 255 }).notNull(),
+    targetUserId: int("targetUserId"),
+    ipAddress: varchar("ipAddress", { length: 64 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    targetIdx: index("audit_target_idx").on(table.targetUserId, table.createdAt),
+    adminIdx: index("audit_admin_idx").on(table.adminId, table.createdAt),
+  }),
+);
 
 export const salesCategories = mysqlTable("sales_categories", {
   id: int("id").autoincrement().primaryKey(),
@@ -59,3 +83,4 @@ export type InsertUser = typeof users.$inferInsert;
 export type SalesCategory = typeof salesCategories.$inferSelect;
 export type Sale = typeof sales.$inferSelect;
 export type InsertSale = typeof sales.$inferInsert;
+export type AuditLog = typeof auditLogs.$inferSelect;
