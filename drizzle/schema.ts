@@ -1,17 +1,17 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import {
+  date,
+  decimal,
+  index,
+  int,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/mysql-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -22,7 +22,40 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+export const salesCategories = mysqlTable("sales_categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const sales = mysqlTable(
+  "sales",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    saleDate: date("saleDate", { mode: "string" }).notNull(),
+    agentId: int("agentId").notNull(),
+    customerName: varchar("customerName", { length: 180 }).notNull(),
+    landingPageInitialOrder: decimal("landingPageInitialOrder", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    resellerDistributorPackage: decimal("resellerDistributorPackage", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    messaging: decimal("messaging", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    categoryId: int("categoryId").notNull(),
+    warmLeadsOutboundCalls: decimal("warmLeadsOutboundCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    advancedPayment: decimal("advancedPayment", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    hotleadsUpsellCalls: decimal("hotleadsUpsellCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    totalPosSales: decimal("totalPosSales", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    agentDateIdx: index("sales_agent_date_idx").on(table.agentId, table.saleDate),
+    dateIdx: index("sales_date_idx").on(table.saleDate),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-
-// TODO: Add your tables here
+export type SalesCategory = typeof salesCategories.$inferSelect;
+export type Sale = typeof sales.$inferSelect;
+export type InsertSale = typeof sales.$inferInsert;
