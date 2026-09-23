@@ -16,7 +16,7 @@ const metrics = [
   ["Reseller / Distributor", "reseller", Package, "neutral"],
   ["Messaging Sales", "messaging", Send, "neutral"],
   ["Warm Leads / Outbound", "warmLeads", PhoneCall, "neutral"],
-  ["Hotleads / Upsell", "hotleads", Flame, "neutral"],
+  ["Landing Page With Upsell", "hotleads", Flame, "neutral"],
   ["Advanced Payments", "advancedPayments", Sparkles, "warm"],
 ] as const;
 
