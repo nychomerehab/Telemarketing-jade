@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateTotalPosSales } from "./routers";
+import { calculateTotalPosSales, nextDayKey } from "./routers";
 
 describe("calculateTotalPosSales", () => {
   it("adds the five sale fields and excludes advanced payment", () => {
@@ -24,5 +24,10 @@ describe("calculateTotalPosSales", () => {
     });
 
     expect(total).toBeCloseTo(16, 5);
+  });
+
+  it("uses the next calendar day as the exclusive end of Today", () => {
+    expect(nextDayKey("2026-09-23")).toBe("2026-09-24");
+    expect(nextDayKey("2026-12-31")).toBe("2027-01-01");
   });
 });
