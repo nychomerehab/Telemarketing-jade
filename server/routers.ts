@@ -13,6 +13,7 @@ import {
   getDb,
   getSalesBetween,
   getSalesForUser,
+  getUserAccounts,
   getUserById,
   getUserByUsername,
   insertAuditLog,
@@ -72,7 +73,7 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => { const cookieOptions = getSessionCookieOptions(ctx.req); ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 }); return { success: true } as const; }),
   }),
   userManagement: router({
-    list: adminProcedure.input(z.object({ search: z.string().optional(), status: z.enum(["all", "active", "inactive"]).default("all") }).optional()).query(({ input }) => getAgentUsers(input?.search, input?.status === "all" ? undefined : input?.status)),
+    list: adminProcedure.input(z.object({ search: z.string().optional(), status: z.enum(["all", "active", "inactive"]).default("all"), role: z.enum(["agents", "all"]).default("agents") }).optional()).query(({ input }) => input?.role === "all" ? getUserAccounts(input?.search, input?.status === "all" ? undefined : input?.status) : getAgentUsers(input?.search, input?.status === "all" ? undefined : input?.status)),
     auditLogs: adminProcedure.query(() => import("./db").then(({ getAuditLogs }) => getAuditLogs(150))),
     create: adminProcedure.input(agentFields.and(passwordPair)).mutation(async ({ ctx, input }) => {
       const existing = await getUserByUsername(input.username);
@@ -86,29 +87,41 @@ export const appRouter = router({
       await insertAuditLog({ adminId: ctx.user.id, targetUserId: id, ipAddress: clientIp(ctx.req), action: `Super Admin created agent account: ${input.fullName}` });
       return { success: true, id, fullName: input.fullName, username: input.username } as const;
     }),
+    createAdmin: adminProcedure.input(agentFields.and(passwordPair)).mutation(async ({ ctx, input }) => {
+      const existing = await getUserByUsername(input.username);
+      if (existing) throw new TRPCError({ code: "CONFLICT", message: "Username already exists. Please choose another username." });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
+      const passwordHash = await bcrypt.hash(input.password, 12);
+      const openId = `local:${input.username}`;
+      const result = await db.insert(users).values({ openId, username: input.username, name: input.fullName, passwordHash, role: "admin", status: input.status, email: input.email || null, contactNumber: input.contactNumber || null, dateStarted: input.dateStarted || null, notes: input.notes || null, createdBy: ctx.user.id, loginMethod: "local" });
+      const id = Number(result[0].insertId);
+      await insertAuditLog({ adminId: ctx.user.id, targetUserId: id, ipAddress: clientIp(ctx.req), action: `Super Admin created department-head account: ${input.fullName}` });
+      return { success: true, id, fullName: input.fullName, username: input.username } as const;
+    }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), ...agentFields.shape })).mutation(async ({ ctx, input }) => {
       const target = await getUserById(input.id);
-      if (!target || target.role !== "user") throw new TRPCError({ code: "NOT_FOUND", message: "Agent account not found" });
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Account not found" });
       const existingUsername = await getUserByUsername(input.username);
       if (existingUsername && existingUsername.id !== input.id) throw new TRPCError({ code: "CONFLICT", message: "Username already exists. Please choose another username." });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       await db.update(users).set({ name: input.fullName, username: input.username, email: input.email || null, contactNumber: input.contactNumber || null, dateStarted: input.dateStarted || null, notes: input.notes || null, status: input.status }).where(eq(users.id, input.id));
-      await insertAuditLog({ adminId: ctx.user.id, targetUserId: input.id, ipAddress: clientIp(ctx.req), action: `Super Admin edited agent account: ${input.fullName}` });
+      await insertAuditLog({ adminId: ctx.user.id, targetUserId: input.id, ipAddress: clientIp(ctx.req), action: `Super Admin edited account: ${input.fullName}` });
       return { success: true } as const;
     }),
     changePassword: adminProcedure.input(z.object({ id: z.number().int().positive() }).and(passwordPair)).mutation(async ({ ctx, input }) => {
       const target = await getUserById(input.id);
-      if (!target || target.role !== "user") throw new TRPCError({ code: "NOT_FOUND", message: "Agent account not found" });
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Account not found" });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       await db.update(users).set({ passwordHash: await bcrypt.hash(input.password, 12), sessionVersion: target.sessionVersion + 1 }).where(eq(users.id, input.id));
-      await insertAuditLog({ adminId: ctx.user.id, targetUserId: input.id, ipAddress: clientIp(ctx.req), action: `Super Admin changed password for agent: ${target.name || target.username}` });
+      await insertAuditLog({ adminId: ctx.user.id, targetUserId: input.id, ipAddress: clientIp(ctx.req), action: `Super Admin changed password for account: ${target.name || target.username}` });
       return { success: true } as const;
     }),
     toggleStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["active", "inactive"]) })).mutation(async ({ ctx, input }) => {
       const target = await getUserById(input.id);
-      if (!target || target.role !== "user") throw new TRPCError({ code: "NOT_FOUND", message: "Agent account not found" });
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Account not found" });
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       await db.update(users).set({ status: input.status, sessionVersion: target.sessionVersion + 1 }).where(eq(users.id, input.id));

@@ -80,6 +80,21 @@ export async function getAgentUsers(search?: string, status?: "active" | "inacti
     .orderBy(desc(users.createdAt));
 }
 
+export async function getUserAccounts(search?: string, status?: "active" | "inactive") {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = status ? [eq(users.status, status)] : [];
+  if (search?.trim()) {
+    const term = `%${search.trim()}%`;
+    conditions.push(or(like(users.name, term), like(users.username, term))!);
+  }
+  return db
+    .select({ id: users.id, name: users.name, username: users.username, role: users.role, status: users.status, email: users.email, contactNumber: users.contactNumber, dateStarted: users.dateStarted, notes: users.notes, createdAt: users.createdAt, lastSignedIn: users.lastSignedIn })
+    .from(users)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(desc(users.createdAt));
+}
+
 export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
