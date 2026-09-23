@@ -72,8 +72,8 @@ export const appRouter = router({
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" });
       const passwordHash = await bcrypt.hash(input.password, 12);
       const openId = `local:${input.username}`;
-      const result = await db.insert(users).values({ openId, username: input.username, name: input.fullName, passwordHash, role: "user", status: input.status, email: input.email || null, contactNumber: input.contactNumber || null, dateStarted: input.dateStarted || null, notes: input.notes || null, createdBy: ctx.user.id, loginMethod: "local" });
-      const id = Number(result[0].insertId);
+      const [result] = await db.insert(users).values({ openId, username: input.username, name: input.fullName, passwordHash, role: "user", status: input.status, email: input.email || null, contactNumber: input.contactNumber || null, dateStarted: input.dateStarted || null, notes: input.notes || null, createdBy: ctx.user.id, loginMethod: "local" }).returning({ id: users.id });
+      const id = result.id;
       await insertAuditLog({ adminId: ctx.user.id, targetUserId: id, ipAddress: clientIp(ctx.req), action: `Super Admin created agent account: ${input.fullName}` });
       return { success: true, id, fullName: input.fullName, username: input.username } as const;
     }),

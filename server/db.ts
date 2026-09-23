@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, like, lt, or } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import {
   auditLogs,
   InsertSale,
@@ -14,7 +15,7 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
-    try { _db = drizzle(process.env.DATABASE_URL); }
+    try { _db = drizzle(postgres(process.env.DATABASE_URL, { prepare: false })); }
     catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
   }
   return _db;
@@ -35,7 +36,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
   values.lastSignedIn ??= new Date();
   if (!Object.keys(updateSet).length) updateSet.lastSignedIn = new Date();
-  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -115,10 +116,8 @@ export async function getCategoryById(id: number) {
 export async function insertSale(value: InsertSale) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  const result = await db.insert(sales).values(value);
-  const id = Number(result[0].insertId);
-  const created = await db.select().from(sales).where(eq(sales.id, id)).limit(1);
-  return created[0];
+  const [created] = await db.insert(sales).values(value).returning();
+  return created;
 }
 
 export async function getSalesForUser(agentId: number, limit = 100) {

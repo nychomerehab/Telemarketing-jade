@@ -1,33 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1790080870193,
-      "tag": "0000_illegal_valkyrie",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1790081220897,
-      "tag": "0001_steep_toxin",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1790082145012,
-      "tag": "0002_kind_micromacro",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1790083186619,
-      "tag": "0003_tidy_warlock",
+      "version": "7",
+      "when": 1790178108604,
+      "tag": "0000_youthful_carnage",
       "breakpoints": true
     }
   ]

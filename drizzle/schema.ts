@@ -2,41 +2,45 @@ import {
   date,
   decimal,
   index,
-  int,
-  mysqlEnum,
-  mysqlTable,
+  integer,
+  pgEnum,
+  pgTable,
+  serial,
   text,
   timestamp,
   varchar,
-} from "drizzle-orm/mysql-core";
+} from "drizzle-orm/pg-core";
 
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
+export const userStatusEnum = pgEnum("user_status", ["active", "inactive"]);
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 128 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   username: varchar("username", { length: 80 }).unique(),
   passwordHash: varchar("passwordHash", { length: 255 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  status: mysqlEnum("status", ["active", "inactive"]).default("active").notNull(),
+  role: userRoleEnum("role").default("user").notNull(),
+  status: userStatusEnum("status").default("active").notNull(),
   contactNumber: varchar("contactNumber", { length: 40 }),
   dateStarted: date("dateStarted", { mode: "string" }),
   notes: text("notes"),
-  createdBy: int("createdBy"),
+  createdBy: integer("createdBy"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-  sessionVersion: int("sessionVersion").default(0).notNull(),
+  sessionVersion: integer("sessionVersion").default(0).notNull(),
 });
 
-export const auditLogs = mysqlTable(
+export const auditLogs = pgTable(
   "audit_logs",
   {
-    id: int("id").autoincrement().primaryKey(),
-    adminId: int("adminId").notNull(),
+    id: serial("id").primaryKey(),
+    adminId: integer("adminId").notNull(),
     action: varchar("action", { length: 255 }).notNull(),
-    targetUserId: int("targetUserId"),
+    targetUserId: integer("targetUserId"),
     ipAddress: varchar("ipAddress", { length: 64 }),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
   },
@@ -46,31 +50,31 @@ export const auditLogs = mysqlTable(
   }),
 );
 
-export const salesCategories = mysqlTable("sales_categories", {
-  id: int("id").autoincrement().primaryKey(),
+export const salesCategories = pgTable("sales_categories", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 120 }).notNull(),
-  isActive: int("isActive").default(1).notNull(),
+  isActive: integer("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
-export const sales = mysqlTable(
+export const sales = pgTable(
   "sales",
   {
-    id: int("id").autoincrement().primaryKey(),
+    id: serial("id").primaryKey(),
     saleDate: date("saleDate", { mode: "string" }).notNull(),
-    agentId: int("agentId").notNull(),
+    agentId: integer("agentId").notNull(),
     customerName: varchar("customerName", { length: 180 }).notNull(),
     landingPageInitialOrder: decimal("landingPageInitialOrder", { precision: 12, scale: 2 }).default("0.00").notNull(),
     resellerDistributorPackage: decimal("resellerDistributorPackage", { precision: 12, scale: 2 }).default("0.00").notNull(),
     messaging: decimal("messaging", { precision: 12, scale: 2 }).default("0.00").notNull(),
-    categoryId: int("categoryId"),
+    categoryId: integer("categoryId"),
     warmLeadsOutboundCalls: decimal("warmLeadsOutboundCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
     advancedPayment: decimal("advancedPayment", { precision: 12, scale: 2 }).default("0.00").notNull(),
     hotleadsUpsellCalls: decimal("hotleadsUpsellCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
     totalPosSales: decimal("totalPosSales", { precision: 12, scale: 2 }).default("0.00").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().$onUpdate(() => new Date()).notNull(),
   },
   (table) => ({
     agentDateIdx: index("sales_agent_date_idx").on(table.agentId, table.saleDate),

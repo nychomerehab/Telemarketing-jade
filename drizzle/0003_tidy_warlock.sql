@@ -1,1 +1,0 @@
-ALTER TABLE `sales` MODIFY COLUMN `categoryId` int;
