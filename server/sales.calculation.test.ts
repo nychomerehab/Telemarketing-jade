@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateTotalPosSales, nextDayKey } from "./routers";
+import { calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
 
 describe("calculateTotalPosSales", () => {
   it("adds the five sale fields and excludes advanced payment", () => {
@@ -29,5 +29,15 @@ describe("calculateTotalPosSales", () => {
   it("uses the next calendar day as the exclusive end of Today", () => {
     expect(nextDayKey("2026-09-23")).toBe("2026-09-24");
     expect(nextDayKey("2026-12-31")).toBe("2027-01-01");
+  });
+
+  it("matches legacy uncategorized landing page sales from their recorded breakdown", () => {
+    expect(matchesReportCategory({ sale: { categoryId: null, landingPageInitialOrder: "499.00", hotleadsUpsellCalls: "350.00" } }, 2, "LANDING PAGE")).toBe(true);
+    expect(matchesReportCategory({ sale: { categoryId: null, landingPageInitialOrder: "499.00", hotleadsUpsellCalls: "350.00" } }, 4, "MESSAGING")).toBe(false);
+  });
+
+  it("uses the stored category ID when a sale has one", () => {
+    expect(matchesReportCategory({ sale: { categoryId: 3, landingPageInitialOrder: "0.00" } }, 3, "LANDING PAGE WITH UPSELL")).toBe(true);
+    expect(matchesReportCategory({ sale: { categoryId: 3, landingPageInitialOrder: "499.00" } }, 2, "LANDING PAGE")).toBe(false);
   });
 });
