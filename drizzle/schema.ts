@@ -64,7 +64,7 @@ export const sales = mysqlTable(
     landingPageInitialOrder: decimal("landingPageInitialOrder", { precision: 12, scale: 2 }).default("0.00").notNull(),
     resellerDistributorPackage: decimal("resellerDistributorPackage", { precision: 12, scale: 2 }).default("0.00").notNull(),
     messaging: decimal("messaging", { precision: 12, scale: 2 }).default("0.00").notNull(),
-    categoryId: int("categoryId").notNull(),
+    categoryId: int("categoryId"),
     warmLeadsOutboundCalls: decimal("warmLeadsOutboundCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
     advancedPayment: decimal("advancedPayment", { precision: 12, scale: 2 }).default("0.00").notNull(),
     hotleadsUpsellCalls: decimal("hotleadsUpsellCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
