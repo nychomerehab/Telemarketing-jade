@@ -17,7 +17,7 @@ const metrics = [
   ["Messaging Sales", "messaging", Send, "neutral"],
   ["Warm Leads / Outbound", "warmLeads", PhoneCall, "neutral"],
   ["Landing Page With Upsell", "hotleads", Flame, "neutral"],
-  ["Advanced Payments", "advancedPayments", Sparkles, "warm"],
+  ["Advance Payments", "initialPayments", Sparkles, "warm"],
 ] as const;
 
 export default function Home() {
