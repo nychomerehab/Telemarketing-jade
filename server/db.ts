@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, lt, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, like, lt, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   auditLogs,
@@ -148,6 +148,14 @@ export async function getSalesBetween(start: string, end: string, agentId?: numb
   const conditions = [gte(sales.saleDate, start), lt(sales.saleDate, end)];
   if (agentId !== undefined) conditions.push(eq(sales.agentId, agentId));
   return db.select({ sale: sales, categoryName: salesCategories.name, agentName: users.name, agentEmail: users.email }).from(sales).leftJoin(salesCategories, eq(sales.categoryId, salesCategories.id)).leftJoin(users, eq(sales.agentId, users.id)).where(and(...conditions)).orderBy(desc(sales.saleDate), desc(sales.createdAt));
+}
+
+export async function updateSalesStatus(ids: number[], status: "no_status" | "shipped" | "delivered" | "returned", commissionAmount: string, agentId?: number) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return;
+  const conditions = [inArray(sales.id, ids)];
+  if (agentId !== undefined) conditions.push(eq(sales.agentId, agentId));
+  await db.update(sales).set({ clientStatus: status, commissionAmount }).where(and(...conditions));
 }
 
 export type SaleWithCategory = Awaited<ReturnType<typeof getSalesForUser>>[number];

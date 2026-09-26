@@ -73,6 +73,8 @@ export const sales = mysqlTable(
     initialPaymentAmount: decimal("initialPaymentAmount", { precision: 12, scale: 2 }).default("0.00").notNull(),
     paymentDate: date("paymentDate", { mode: "string" }),
     paymentMethod: mysqlEnum("paymentMethod", ["cash", "gcash", "bank_transfer", "card", "other"]),
+    clientStatus: mysqlEnum("clientStatus", ["no_status", "shipped", "delivered", "returned"]).default("no_status").notNull(),
+    commissionAmount: decimal("commissionAmount", { precision: 12, scale: 2 }).default("0.00").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },

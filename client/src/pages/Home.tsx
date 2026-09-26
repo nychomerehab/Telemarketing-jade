@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
-import { ArrowUpRight, CalendarDays, ClipboardList, CreditCard, Flame, Loader2, Package, PhoneCall, Plus, Send, ShoppingBag, Sparkles, Users } from "lucide-react";
+import { ArrowUpRight, CalendarDays, ClipboardList, CreditCard, Flame, Loader2, Package, Percent, PhoneCall, Plus, Send, ShoppingBag, Sparkles, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const currency = (value: number | string | null | undefined) => new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(Number(value ?? 0));
@@ -18,6 +18,7 @@ const metrics = [
   ["Warm Leads / Outbound", "warmLeads", PhoneCall, "neutral"],
   ["Landing Page With Upsell", "hotleads", Flame, "neutral"],
   ["Advance Payments", "initialPayments", Sparkles, "warm"],
+  ["Commission", "commission", Percent, "neutral"],
 ] as const;
 
 export default function Home() {

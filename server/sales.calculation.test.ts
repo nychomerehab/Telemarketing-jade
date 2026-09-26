@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
+import { calculateAgentCommission, calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
 
 describe("calculateTotalPosSales", () => {
   it("adds the five sale fields and excludes advanced payment", () => {
@@ -39,5 +39,13 @@ describe("calculateTotalPosSales", () => {
   it("uses the stored category ID when a sale has one", () => {
     expect(matchesReportCategory({ sale: { categoryId: 3, landingPageInitialOrder: "0.00" } }, 3, "LANDING PAGE WITH UPSELL")).toBe(true);
     expect(matchesReportCategory({ sale: { categoryId: 3, landingPageInitialOrder: "499.00" } }, 2, "LANDING PAGE")).toBe(false);
+  });
+
+  it("computes commission only when the client is delivered", () => {
+    const sale = { landingPageInitialOrder: 1000, hotleadsUpsellCalls: 500, messaging: 200, warmLeadsOutboundCalls: 300 };
+    expect(calculateAgentCommission(sale, "delivered")).toBeCloseTo(38, 5);
+    expect(calculateAgentCommission(sale, "shipped")).toBe(0);
+    expect(calculateAgentCommission(sale, "returned")).toBe(0);
+    expect(calculateAgentCommission(sale, "no_status")).toBe(0);
   });
 });
