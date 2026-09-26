@@ -8,14 +8,14 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarInset, Si
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useIsMobile } from "@/hooks/useMobile";
-import { BarChart3, BookOpen, KeyRound, LayoutDashboard, Loader2, LogOut, PanelLeft, PlusCircle, Settings, Tags, UserCog } from "lucide-react";
+import { BarChart3, BookOpen, KeyRound, LayoutDashboard, Loader2, LogOut, PanelLeft, Percent, PlusCircle, Settings, Tags, UserCog } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 
 const agentMenu = [{ icon: LayoutDashboard, label: "Overview", path: "/" }, { icon: PlusCircle, label: "New Sale", path: "/new-sale" }, { icon: BookOpen, label: "My Sales", path: "/my-sales" }];
-const adminMenu = [{ icon: LayoutDashboard, label: "Overview", path: "/" }, { icon: BarChart3, label: "Team Sales", path: "/team" }, { icon: Tags, label: "Categories", path: "/categories" }, { icon: Settings, label: "Settings", path: "/settings/user-management", section: true, children: [{ icon: UserCog, label: "User Management", path: "/settings/user-management" }] }];
+const adminMenu = [{ icon: LayoutDashboard, label: "Overview", path: "/" }, { icon: BarChart3, label: "Team Sales", path: "/team" }, { icon: Percent, label: "Commissions", path: "/commissions" }, { icon: Tags, label: "Categories", path: "/categories" }, { icon: Settings, label: "Settings", path: "/settings/user-management", section: true, children: [{ icon: UserCog, label: "User Management", path: "/settings/user-management" }] }];
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 264;
 const MIN_WIDTH = 220;
