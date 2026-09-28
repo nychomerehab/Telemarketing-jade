@@ -73,7 +73,7 @@ export const appRouter = router({
       await db.update(users).set({ lastSignedIn: nextLastLogin }).where(eq(users.id, account.id));
       const token = await sdk.createSessionToken(account.openId, { name: account.name || account.username || "", sessionVersion: account.sessionVersion });
       ctx.res.cookie(COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: ONE_YEAR_MS });
-      return { success: true, user: { ...account, lastSignedIn: nextLastLogin } };
+      return { success: true, user: { id: account.id, name: account.name, username: account.username, role: account.role, status: account.status, email: account.email, lastSignedIn: nextLastLogin } };
     }),
     logout: publicProcedure.mutation(({ ctx }) => { const cookieOptions = getSessionCookieOptions(ctx.req); ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 }); return { success: true } as const; }),
   }),
