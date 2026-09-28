@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { calculateAgentCommission, calculatePaidAmount, calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
+import { calculateAgentCommission, calculateGrossSales, calculatePaidAmount, calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
+
+describe("External Sales separation", () => {
+  it("keeps External Sales out of POS totals while including it in gross sales", () => {
+    expect(calculateTotalPosSales({ landingPageInitialOrder: 0, resellerDistributorPackage: 0, messaging: 0, warmLeadsOutboundCalls: 0, hotleadsUpsellCalls: 0, externalSales: 750 })).toBe(0);
+    expect(calculateGrossSales({ landingPageInitialOrder: 0, resellerDistributorPackage: 0, messaging: 0, warmLeadsOutboundCalls: 0, hotleadsUpsellCalls: 0, externalSales: 750 })).toBe(750);
+  });
+});
 
 describe("calculatePaidAmount", () => {
   it("uses Total POS Sales as the paid amount for fully-paid orders", () => {
@@ -22,7 +29,7 @@ describe("calculateTotalPosSales", () => {
       externalSales: "100.00",
     });
 
-    expect(total).toBe(2747);
+    expect(total).toBe(2647);
   });
 
   it("supports decimal values, External Sales, and zero amounts", () => {
@@ -35,7 +42,7 @@ describe("calculateTotalPosSales", () => {
       externalSales: 2,
     });
 
-    expect(total).toBeCloseTo(18, 5);
+    expect(total).toBeCloseTo(16, 5)
   });
 
   it("uses the next calendar day as the exclusive end of Today", () => {
