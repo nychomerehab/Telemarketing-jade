@@ -5,8 +5,10 @@ describe("External Sales category normalization", () => {
   it("moves POS breakdown amounts into External Sales for an External Sales category", () => {
     const normalized = normalizeSalesAmounts({ landingPageInitialOrder: 500, resellerDistributorPackage: 0, messaging: 0, warmLeadsOutboundCalls: 0, hotleadsUpsellCalls: 0, externalSales: 250 }, true);
     expect(normalized.totalPosSales).toBe("0.00");
-    expect(normalized.externalSales).toBe("750.00");
+    expect(normalized.externalSales).toBe("250.00");
     expect(normalized.landingPageInitialOrder).toBe("0.00");
+    const explicit = normalizeSalesAmounts({ landingPageInitialOrder: 500, resellerDistributorPackage: 0, messaging: 0, warmLeadsOutboundCalls: 0, hotleadsUpsellCalls: 0, externalSales: 900 }, true);
+    expect(explicit.externalSales).toBe("900.00");
   });
 });
 
