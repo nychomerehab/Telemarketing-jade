@@ -906,7 +906,7 @@ function calculateGrossSales(input) {
 }
 function calculateAgentCommission(input, status) {
   if (status !== "delivered") return 0;
-  return money(input.landingPageInitialOrder) * 5e-3 + money(input.hotleadsUpsellCalls) * 0.03 + money(input.messaging) * 0.03 + money(input.warmLeadsOutboundCalls) * 0.04;
+  return money(input.landingPageInitialOrder) * 5e-3 + money(input.hotleadsUpsellCalls) * 0.03 + money(input.messaging) * 0.03 + money(input.warmLeadsOutboundCalls) * 0.04 + money(input.externalSales) * 0.03;
 }
 function dateKey(date2 = /* @__PURE__ */ new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(date2);

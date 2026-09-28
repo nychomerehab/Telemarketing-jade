@@ -73,6 +73,11 @@ describe("calculateTotalPosSales", () => {
     expect(matchesReportCategory({ sale: { categoryId: 3, landingPageInitialOrder: "499.00" } }, 2, "LANDING PAGE")).toBe(false);
   });
 
+  it("computes 3% commission for delivered External Sales", () => {
+    expect(calculateAgentCommission({ landingPageInitialOrder: 0, hotleadsUpsellCalls: 0, messaging: 0, warmLeadsOutboundCalls: 0, externalSales: 8000 }, "delivered")).toBe(240);
+    expect(calculateAgentCommission({ landingPageInitialOrder: 0, hotleadsUpsellCalls: 0, messaging: 0, warmLeadsOutboundCalls: 0, externalSales: 8000 }, "shipped")).toBe(0);
+  });
+
   it("computes commission only when the client is delivered", () => {
     const sale = { landingPageInitialOrder: 1000, hotleadsUpsellCalls: 500, messaging: 200, warmLeadsOutboundCalls: 300 };
     expect(calculateAgentCommission(sale, "delivered")).toBeCloseTo(38, 5);
