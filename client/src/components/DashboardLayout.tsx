@@ -32,60 +32,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function LoginScreen() {
   const utils = trpc.useUtils();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showExistingAccess, setShowExistingAccess] = useState(false);
-  const [savedAccount, setSavedAccount] = useState<{ username: string; name: string } | null>(null);
+  const [staffUsername, setStaffUsername] = useState("");
+  const [staffPassword, setStaffPassword] = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
   const login = trpc.auth.login.useMutation({
     onSuccess: async (result) => {
       if (result.user?.username) {
-        const account = { username: result.user.username, name: result.user.name || result.user.username };
-        localStorage.setItem("shinjiru-existing-admin", JSON.stringify(account));
-        setSavedAccount(account);
+        localStorage.setItem("shinjiru-existing-admin", JSON.stringify({ username: result.user.username, name: result.user.name || result.user.username }));
       }
       await utils.auth.me.invalidate();
-      toast.success("Welcome back.");
+      toast.success(result.user?.role === "admin" ? "Welcome, Super Admin." : "Welcome back.");
     },
     onError: (error) => toast.error(error.message),
   });
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("shinjiru-existing-admin");
-      if (raw) {
-        const account = JSON.parse(raw);
-        if (account?.username && account?.name) setSavedAccount(account);
-      }
-    } catch {}
-  }, []);
-
-  const chooseExistingAccount = () => {
-    setShowExistingAccess(true);
-    if (savedAccount) setUsername(savedAccount.username);
-  };
 
   return <div className="min-h-screen bg-[#f6f7f5] text-[#18211d] flex items-center justify-center px-6 relative overflow-hidden">
     <div className="absolute -top-40 -right-32 h-[34rem] w-[34rem] rounded-full bg-[#d7eee4] blur-3xl opacity-70" />
     <div className="absolute -bottom-52 -left-24 h-[30rem] w-[30rem] rounded-full bg-[#ffe4d5] blur-3xl opacity-60" />
     <div className="relative max-w-md w-full rounded-[2rem] bg-white/95 p-8 md:p-10 shadow-[0_20px_80px_rgba(24,33,29,0.12)] border border-white">
-      <div className="mb-8 flex items-center gap-3">
-        <div className="h-11 w-11 rounded-2xl bg-[#143f35] text-[#e6f4ed] flex items-center justify-center font-bold tracking-tight">TS</div>
-        <div><p className="font-bold tracking-tight">Shinjiru Sales</p><p className="text-xs text-[#6b7c73]">Monitoring System</p></div>
-      </div>
+      <div className="mb-8 flex items-center gap-3"><div className="h-11 w-11 rounded-2xl bg-[#143f35] text-[#e6f4ed] flex items-center justify-center font-bold tracking-tight">TS</div><div><p className="font-bold tracking-tight">Shinjiru Sales</p><p className="text-xs text-[#6b7c73]">Monitoring System</p></div></div>
       <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ef7b55] mb-3">Secure sign in</p>
-      <h1 className="text-3xl md:text-4xl font-semibold tracking-[-0.04em] leading-tight text-[#143f35]">{showExistingAccess && savedAccount ? `Continue as ${savedAccount.name}` : "Welcome back."}</h1>
+      <h1 className="text-3xl md:text-4xl font-semibold tracking-[-0.04em] leading-tight text-[#143f35]">Welcome back.</h1>
       <p className="mt-3 text-sm leading-6 text-[#6b7c73]">Use your Shinjiru username and password. Your existing admin access stays inside this app.</p>
-      {showExistingAccess && savedAccount && <div className="mt-6 flex items-center gap-3 rounded-2xl border border-[#dbe6df] bg-[#f4faf6] p-4">
-        <div className="h-11 w-11 rounded-full bg-[#d7eee4] text-[#143f35] flex items-center justify-center font-semibold">{savedAccount.name.charAt(0).toUpperCase()}</div>
-        <div className="min-w-0"><p className="font-semibold text-[#143f35] truncate">{savedAccount.name}</p><p className="text-xs text-[#6b7c73] truncate">{savedAccount.username}</p></div>
-      </div>}
-      <form onSubmit={(event) => { event.preventDefault(); login.mutate({ username, password }); }} className="mt-7 space-y-4">
-        <div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">USERNAME</Label><Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" placeholder="your.username" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div>
-        <div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">PASSWORD</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="Enter your password" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div>
+      <form onSubmit={(event) => { event.preventDefault(); login.mutate({ username: staffUsername, password: staffPassword, role: "user" }); }} className="mt-7 space-y-4">
+        <div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">USERNAME</Label><Input value={staffUsername} onChange={(e) => setStaffUsername(e.target.value)} autoComplete="username" placeholder="your.username" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div>
+        <div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">PASSWORD</Label><Input type="password" value={staffPassword} onChange={(e) => setStaffPassword(e.target.value)} autoComplete="current-password" placeholder="Enter your password" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div>
         <Button type="submit" disabled={login.isPending} className="w-full h-12 rounded-xl bg-[#143f35] hover:bg-[#0f3029] text-white">{login.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}Sign in</Button>
       </form>
       <div className="my-6 flex items-center gap-3"><div className="h-px flex-1 bg-[#e3ebe6]" /><span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a0afa7]">Shinjiru access</span><div className="h-px flex-1 bg-[#e3ebe6]" /></div>
-      {!showExistingAccess ? <Button type="button" variant="outline" onClick={chooseExistingAccount} className="w-full h-11 rounded-xl border-[#dbe6df] text-[#527064]">Existing admin access</Button> : <Button type="button" variant="outline" onClick={() => { setShowExistingAccess(false); setUsername(""); setPassword(""); }} className="w-full h-11 rounded-xl border-[#dbe6df] text-[#527064]">Use another account</Button>}
+      <form onSubmit={(event) => { event.preventDefault(); login.mutate({ username: adminUsername, password: adminPassword, role: "admin" }); }} className="rounded-2xl border border-[#dbe6df] bg-[#f4faf6] p-4 space-y-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#8f824c]">Super Admin password login</p>
+        <div><Label className="mb-2 block text-xs font-medium text-[#527064]">Admin username</Label><Input value={adminUsername} onChange={(e) => setAdminUsername(e.target.value)} autoComplete="username" placeholder="Administrator username" className="h-11 rounded-xl bg-white" required /></div>
+        <div><Label className="mb-2 block text-xs font-medium text-[#527064]">Admin password</Label><Input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} autoComplete="current-password" placeholder="Administrator password" className="h-11 rounded-xl bg-white" required /></div>
+        <div className="flex gap-2"><Button type="button" variant="outline" onClick={() => { setAdminUsername(""); setAdminPassword(""); }} className="h-10 flex-1 rounded-xl border-[#dbe6df] bg-white text-[#527064]">Cancel</Button><Button type="submit" disabled={login.isPending} className="h-10 flex-1 rounded-xl bg-[#143f35] text-white hover:bg-[#0f3029]">{login.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}Sign in</Button></div>
+      </form>
       <p className="mt-4 text-center text-[11px] leading-5 text-[#8a9d92]">There is no public registration. Accounts are created by a Super Admin.</p>
     </div>
   </div>;
