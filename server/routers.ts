@@ -61,10 +61,11 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
-    login: publicProcedure.input(z.object({ username: usernameInput, password: z.string().min(1) })).mutation(async ({ ctx, input }) => {
+    login: publicProcedure.input(z.object({ username: usernameInput, password: z.string().min(1), role: z.enum(["user", "admin"]).default("user") })).mutation(async ({ ctx, input }) => {
       const account = await getUserByUsername(input.username);
       if (!account?.passwordHash) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid username or password." });
       if (account.status === "inactive") throw new TRPCError({ code: "FORBIDDEN", message: "This account is currently inactive. Please contact your administrator." });
+      if (account.role !== input.role) throw new TRPCError({ code: "UNAUTHORIZED", message: input.role === "admin" ? "Use a Super Admin account for this sign-in." : "Use a staff account for this sign-in." });
       const matches = await bcrypt.compare(input.password, account.passwordHash);
       if (!matches) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid username or password." });
       const db = await getDb();
