@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { calculateAgentCommission, calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
+import { calculateAgentCommission, calculatePaidAmount, calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
+
+describe("calculatePaidAmount", () => {
+  it("uses Total POS Sales as the paid amount for fully-paid orders", () => {
+    expect(calculatePaidAmount({ paymentStatus: "fully_paid", initialPaymentAmount: "0.00", totalPosSales: "1000.00" })).toBe(1000);
+  });
+
+  it("uses the recorded initial amount for advance payments", () => {
+    expect(calculatePaidAmount({ paymentStatus: "initial_payment", initialPaymentAmount: "250.00", totalPosSales: "1000.00" })).toBe(250);
+  });
+});
 
 describe("calculateTotalPosSales", () => {
   it("adds all sale fields and excludes advanced payment", () => {
