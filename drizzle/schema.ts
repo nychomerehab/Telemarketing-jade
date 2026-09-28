@@ -75,6 +75,7 @@ export const sales = pgTable(
     warmLeadsOutboundCalls: decimal("warmLeadsOutboundCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
     advancedPayment: decimal("advancedPayment", { precision: 12, scale: 2 }).default("0.00").notNull(),
     hotleadsUpsellCalls: decimal("hotleadsUpsellCalls", { precision: 12, scale: 2 }).default("0.00").notNull(),
+    externalSales: decimal("externalSales", { precision: 12, scale: 2 }).default("0.00").notNull(),
     totalPosSales: decimal("totalPosSales", { precision: 12, scale: 2 }).default("0.00").notNull(),
     paymentStatus: paymentStatus("paymentStatus").default("no_payment").notNull(),
     initialPaymentAmount: decimal("initialPaymentAmount", { precision: 12, scale: 2 }).default("0.00").notNull(),

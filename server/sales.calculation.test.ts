@@ -2,28 +2,30 @@ import { describe, expect, it } from "vitest";
 import { calculateAgentCommission, calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
 
 describe("calculateTotalPosSales", () => {
-  it("adds the five sale fields and excludes advanced payment", () => {
+  it("adds all sale fields and excludes advanced payment", () => {
     const total = calculateTotalPosSales({
       landingPageInitialOrder: "499.00",
       resellerDistributorPackage: "0.00",
       messaging: "0.00",
       warmLeadsOutboundCalls: "849.00",
       hotleadsUpsellCalls: "1299.00",
+      externalSales: "100.00",
     });
 
-    expect(total).toBe(2647);
+    expect(total).toBe(2747);
   });
 
-  it("supports decimal values and zero amounts", () => {
+  it("supports decimal values, External Sales, and zero amounts", () => {
     const total = calculateTotalPosSales({
       landingPageInitialOrder: 10.25,
       resellerDistributorPackage: 4.5,
       messaging: 0,
       warmLeadsOutboundCalls: 0.25,
       hotleadsUpsellCalls: 1,
+      externalSales: 2,
     });
 
-    expect(total).toBeCloseTo(16, 5);
+    expect(total).toBeCloseTo(18, 5);
   });
 
   it("uses the next calendar day as the exclusive end of Today", () => {
