@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { calculateAgentCommission, calculateGrossSales, calculatePaidAmount, calculateTotalPosSales, matchesReportCategory, nextDayKey } from "./routers";
+import { calculateAgentCommission, calculateGrossSales, calculatePaidAmount, calculateTotalPosSales, normalizeSalesAmounts, matchesReportCategory, nextDayKey } from "./routers";
+
+describe("External Sales category normalization", () => {
+  it("moves POS breakdown amounts into External Sales for an External Sales category", () => {
+    const normalized = normalizeSalesAmounts({ landingPageInitialOrder: 500, resellerDistributorPackage: 0, messaging: 0, warmLeadsOutboundCalls: 0, hotleadsUpsellCalls: 0, externalSales: 250 }, true);
+    expect(normalized.totalPosSales).toBe("0.00");
+    expect(normalized.externalSales).toBe("750.00");
+    expect(normalized.landingPageInitialOrder).toBe("0.00");
+  });
+});
 
 describe("External Sales separation", () => {
   it("keeps External Sales out of POS totals while including it in gross sales", () => {
