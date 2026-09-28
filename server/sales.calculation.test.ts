@@ -9,6 +9,8 @@ describe("External Sales category normalization", () => {
     expect(normalized.landingPageInitialOrder).toBe("0.00");
     const explicit = normalizeSalesAmounts({ landingPageInitialOrder: 500, resellerDistributorPackage: 0, messaging: 0, warmLeadsOutboundCalls: 0, hotleadsUpsellCalls: 0, externalSales: 900 }, true);
     expect(explicit.externalSales).toBe("900.00");
+    const paidFallback = normalizeSalesAmounts({ landingPageInitialOrder: 0, resellerDistributorPackage: 0, messaging: 0, warmLeadsOutboundCalls: 0, hotleadsUpsellCalls: 0, externalSales: 0, paymentStatus: "fully_paid", initialPaymentAmount: 1200 }, true);
+    expect(paidFallback.externalSales).toBe("1200.00");
   });
 });
 
