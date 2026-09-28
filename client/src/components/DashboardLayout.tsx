@@ -32,10 +32,57 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function LoginScreen() {
   const utils = trpc.useUtils();
-  const login = trpc.auth.login.useMutation({ onSuccess: async () => { await utils.auth.me.invalidate(); toast.success("Welcome back."); }, onError: (error) => toast.error(error.message) });
+  const login = trpc.auth.login.useMutation({
+    onSuccess: async () => {
+      await utils.auth.me.invalidate();
+      toast.success("Welcome back.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  return <div className="min-h-screen bg-[#f6f7f5] text-[#18211d] flex items-center justify-center px-6 relative overflow-hidden"><div className="absolute -top-40 -right-32 h-[34rem] w-[34rem] rounded-full bg-[#d7eee4] blur-3xl opacity-70" /><div className="absolute -bottom-52 -left-24 h-[30rem] w-[30rem] rounded-full bg-[#ffe4d5] blur-3xl opacity-60" /><div className="relative max-w-md w-full rounded-[2rem] bg-white/95 p-8 md:p-10 shadow-[0_20px_80px_rgba(24,33,29,0.12)] border border-white"><div className="mb-8 flex items-center gap-3"><div className="h-11 w-11 rounded-2xl bg-[#143f35] text-[#e6f4ed] flex items-center justify-center font-bold tracking-tight">TS</div><div><p className="font-bold tracking-tight">Telemarketing Sales</p><p className="text-xs text-[#6b7c73]">Monitoring System</p></div></div><p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ef7b55] mb-3">Secure sign in</p><h1 className="text-3xl md:text-4xl font-semibold tracking-[-0.04em] leading-tight text-[#143f35]">Welcome back.</h1><p className="mt-3 text-sm leading-6 text-[#6b7c73]">Use the username and password provided by your Super Admin.</p><form onSubmit={(event) => { event.preventDefault(); login.mutate({ username, password }); }} className="mt-7 space-y-4"><div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">USERNAME</Label><Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" placeholder="your.username" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div><div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">PASSWORD</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="Enter your password" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div><Button type="submit" disabled={login.isPending} className="w-full h-12 rounded-xl bg-[#143f35] hover:bg-[#0f3029] text-white">{login.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}Sign in</Button></form><div className="my-6 flex items-center gap-3"><div className="h-px flex-1 bg-[#e3ebe6]" /><span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a0afa7]">Super Admin access</span><div className="h-px flex-1 bg-[#e3ebe6]" /></div><Button type="button" variant="outline" onClick={() => startLogin()} className="w-full h-11 rounded-xl border-[#dbe6df] text-[#527064]">Continue with existing admin access</Button><p className="mt-4 text-center text-[11px] leading-5 text-[#8a9d92]">There is no public registration. Agent accounts are created by a Super Admin.</p></div></div>;
+  const [manualMode, setManualMode] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const isVercelProduction = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app");
+
+  useEffect(() => {
+    if (!isVercelProduction || manualMode || isRedirecting) return;
+    const timer = window.setTimeout(() => {
+      setIsRedirecting(true);
+      startLogin();
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [isVercelProduction, manualMode, isRedirecting]);
+
+  const useExistingAdminAccess = () => {
+    setIsRedirecting(true);
+    startLogin();
+  };
+
+  return <div className="min-h-screen bg-[#f6f7f5] text-[#18211d] flex items-center justify-center px-6 relative overflow-hidden">
+    <div className="absolute -top-40 -right-32 h-[34rem] w-[34rem] rounded-full bg-[#d7eee4] blur-3xl opacity-70" />
+    <div className="absolute -bottom-52 -left-24 h-[30rem] w-[30rem] rounded-full bg-[#ffe4d5] blur-3xl opacity-60" />
+    <div className="relative max-w-md w-full rounded-[2rem] bg-white/95 p-8 md:p-10 shadow-[0_20px_80px_rgba(24,33,29,0.12)] border border-white">
+      <div className="mb-8 flex items-center gap-3">
+        <div className="h-11 w-11 rounded-2xl bg-[#143f35] text-[#e6f4ed] flex items-center justify-center font-bold tracking-tight">TS</div>
+        <div><p className="font-bold tracking-tight">Shinjiru Sales</p><p className="text-xs text-[#6b7c73]">Monitoring System</p></div>
+      </div>
+      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ef7b55] mb-3">Secure sign in</p>
+      <h1 className="text-3xl md:text-4xl font-semibold tracking-[-0.04em] leading-tight text-[#143f35]">{isVercelProduction && !manualMode ? "Continue to Shinjiru Sales Tracker" : "Welcome back."}</h1>
+      <p className="mt-3 text-sm leading-6 text-[#6b7c73]">{isVercelProduction && !manualMode ? "Choose your existing admin account to continue securely." : "Use the username and password provided by your Super Admin."}</p>
+      {isVercelProduction && !manualMode ? <div className="mt-7 space-y-3">
+        <Button type="button" disabled={isRedirecting} onClick={useExistingAdminAccess} className="w-full h-12 rounded-xl bg-[#143f35] hover:bg-[#0f3029] text-white">{isRedirecting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}{isRedirecting ? "Opening account chooser..." : "Continue with existing admin access"}</Button>
+        <Button type="button" variant="outline" onClick={() => setManualMode(true)} className="w-full h-11 rounded-xl border-[#dbe6df] text-[#527064]">Use username and password instead</Button>
+      </div> : <form onSubmit={(event) => { event.preventDefault(); login.mutate({ username, password }); }} className="mt-7 space-y-4">
+        <div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">USERNAME</Label><Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" placeholder="your.username" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div>
+        <div><Label className="mb-2 block text-[11px] font-semibold tracking-[0.14em] text-[#6b7c73]">PASSWORD</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="Enter your password" className="h-12 rounded-xl bg-[#fbfcfb]" required /></div>
+        <Button type="submit" disabled={login.isPending} className="w-full h-12 rounded-xl bg-[#143f35] hover:bg-[#0f3029] text-white">{login.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}Sign in</Button>
+        {isVercelProduction && <Button type="button" variant="outline" onClick={() => setManualMode(false)} className="w-full h-11 rounded-xl border-[#dbe6df] text-[#527064]">Back to existing admin access</Button>}
+      </form>}
+      {!isVercelProduction && <><div className="my-6 flex items-center gap-3"><div className="h-px flex-1 bg-[#e3ebe6]" /><span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a0afa7]">Super Admin access</span><div className="h-px flex-1 bg-[#e3ebe6]" /></div><Button type="button" variant="outline" onClick={useExistingAdminAccess} className="w-full h-11 rounded-xl border-[#dbe6df] text-[#527064]">Continue with existing admin access</Button></>}
+      <p className="mt-4 text-center text-[11px] leading-5 text-[#8a9d92]">There is no public registration. Agent accounts are created by a Super Admin.</p>
+    </div>
+  </div>;
 }
 
 function DashboardLayoutContent({ children, user, setSidebarWidth }: { children: React.ReactNode; user: NonNullable<ReturnType<typeof useAuth>["user"]>; setSidebarWidth: (width: number) => void }) {
