@@ -80,6 +80,8 @@ function DashboardLayoutContent({ children, user, setSidebarWidth }: { children:
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { logout } = useAuth();
+  const adminOnlyPaths = ["/team", "/commissions", "/categories", "/settings/user-management"];
+  useEffect(() => { if (user.role !== "admin" && adminOnlyPaths.includes(location)) setLocation("/"); }, [user.role, location, setLocation]);
   const menuItems = user.role === "admin" ? adminMenu : agentMenu;
   const activeMenuItem = menuItems.find((item) => item.path === location) || adminMenu.flatMap((item: any) => item.children || []).find((item: any) => item.path === location);
   useEffect(() => { const handleMouseMove = (e: MouseEvent) => { if (!isResizing) return; const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0; const newWidth = e.clientX - sidebarLeft; if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) setSidebarWidth(newWidth); }; const handleMouseUp = () => setIsResizing(false); if (isResizing) { document.addEventListener("mousemove", handleMouseMove); document.addEventListener("mouseup", handleMouseUp); document.body.style.cursor = "col-resize"; document.body.style.userSelect = "none"; } return () => { document.removeEventListener("mousemove", handleMouseMove); document.removeEventListener("mouseup", handleMouseUp); document.body.style.cursor = ""; document.body.style.userSelect = ""; }; }, [isResizing, setSidebarWidth]);
