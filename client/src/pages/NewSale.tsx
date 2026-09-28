@@ -28,10 +28,11 @@ export default function NewSale() {
   const selectedCategory = categories?.find((category) => String(category.id) === form.categoryId);
   const isExternalCategory = selectedCategory?.name.trim().toUpperCase() === "EXTERNAL SALES";
   const externalInput = parseAmount(form.externalSales);
+  const paymentInput = parseAmount(form.initialPaymentAmount);
   const posTotal = isExternalCategory ? 0 : enteredTotal;
-  const externalTotal = isExternalCategory ? (externalInput > 0 ? externalInput : enteredTotal) : 0;
+  const externalTotal = isExternalCategory ? (externalInput > 0 ? externalInput : enteredTotal > 0 ? enteredTotal : form.paymentStatus === "fully_paid" ? paymentInput : 0) : 0;
   const total = posTotal + externalTotal;
-  const paymentAmount = form.paymentStatus === "fully_paid" ? total : form.paymentStatus === "initial_payment" ? parseAmount(form.initialPaymentAmount) : 0;
+  const paymentAmount = form.paymentStatus === "fully_paid" ? (total > 0 ? total : paymentInput) : form.paymentStatus === "initial_payment" ? paymentInput : 0;
   const remainingBalance = Math.max(0, total - paymentAmount);
   const update = (key: keyof FormState, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const canReview = form.customerName.trim().length > 0 && Boolean(form.categoryId) && !categoriesLoading && (form.paymentStatus === "no_payment" || (Boolean(form.paymentDate) && Boolean(form.paymentMethod) && paymentAmount > 0 && paymentAmount <= total));
