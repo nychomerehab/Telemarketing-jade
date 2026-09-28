@@ -1,5 +1,6 @@
+import { Pool } from "pg";
 import { and, desc, eq, gte, inArray, isNull, like, lt, or } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
 import {
   auditLogs,
   InsertSale,
@@ -11,11 +12,21 @@ import {
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: Pool | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
-    try { _db = drizzle(process.env.DATABASE_URL); }
-    catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
+    try {
+      _pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.DATABASE_URL.includes("supabase") ? { rejectUnauthorized: false } : undefined,
+        max: 5,
+      });
+      _db = drizzle(_pool);
+    } catch (error) {
+      console.warn("[Database] Failed to connect:", error);
+      _db = null;
+    }
   }
   return _db;
 }
@@ -28,14 +39,25 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   const updateSet: Record<string, unknown> = {};
   const textFields = ["name", "email", "loginMethod"] as const;
   for (const field of textFields) {
-    if (user[field] !== undefined) { values[field] = user[field] ?? null; updateSet[field] = user[field] ?? null; }
+    if (user[field] !== undefined) {
+      values[field] = user[field] ?? null;
+      updateSet[field] = user[field] ?? null;
+    }
   }
-  if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
-  if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
-  else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
+  if (user.lastSignedIn !== undefined) {
+    values.lastSignedIn = user.lastSignedIn;
+    updateSet.lastSignedIn = user.lastSignedIn;
+  }
+  if (user.role !== undefined) {
+    values.role = user.role;
+    updateSet.role = user.role;
+  } else if (user.openId === ENV.ownerOpenId) {
+    values.role = "admin";
+    updateSet.role = "admin";
+  }
   values.lastSignedIn ??= new Date();
   if (!Object.keys(updateSet).length) updateSet.lastSignedIn = new Date();
-  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -130,10 +152,8 @@ export async function getCategoryById(id: number) {
 export async function insertSale(value: InsertSale) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  const result = await db.insert(sales).values(value);
-  const id = Number(result[0].insertId);
-  const created = await db.select().from(sales).where(eq(sales.id, id)).limit(1);
-  return created[0];
+  const result = await db.insert(sales).values(value).returning();
+  return result[0];
 }
 
 export async function getSalesForUser(agentId: number, limit = 100) {
@@ -155,13 +175,13 @@ export async function updateSalesStatus(ids: number[], status: "no_status" | "sh
   if (!db || ids.length === 0) return;
   const conditions = [inArray(sales.id, ids)];
   if (agentId !== undefined) conditions.push(eq(sales.agentId, agentId));
-  await db.update(sales).set({ clientStatus: status, commissionAmount }).where(and(...conditions));
+  await db.update(sales).set({ clientStatus: status, commissionAmount, updatedAt: new Date() }).where(and(...conditions));
 }
 
 export async function softDeleteSale(id: number, deletedBy: number, deleteReason: string) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  await db.update(sales).set({ deletedAt: new Date(), deletedBy, deleteReason }).where(and(eq(sales.id, id), isNull(sales.deletedAt)));
+  await db.update(sales).set({ deletedAt: new Date(), deletedBy, deleteReason, updatedAt: new Date() }).where(and(eq(sales.id, id), isNull(sales.deletedAt)));
 }
 
 export type SaleWithCategory = Awaited<ReturnType<typeof getSalesForUser>>[number];
