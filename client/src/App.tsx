@@ -10,10 +10,11 @@ import NewSale from "./pages/NewSale";
 import MySales from "./pages/MySales";
 import AdminOverview from "./pages/AdminOverview";
 import Categories from "./pages/Categories";
-import UserManagement from "./pages/UserManagement";
+import UserManagement from "@/pages/UserManagement";
+import Commissions from "@/pages/Commissions";
 
 function Router() {
-  return <DashboardLayout><Switch><Route path="/" component={Home} /><Route path="/new-sale" component={NewSale} /><Route path="/my-sales" component={MySales} /><Route path="/team" component={AdminOverview} /><Route path="/categories" component={Categories} /><Route path="/settings/user-management" component={UserManagement} /><Route path="/404" component={NotFound} /><Route component={NotFound} /></Switch></DashboardLayout>;
+  return <DashboardLayout><Switch><Route path="/" component={Home} /><Route path="/new-sale" component={NewSale} /><Route path="/my-sales" component={MySales} /><Route path="/team" component={AdminOverview} /><Route path="/commissions" component={Commissions} /><Route path="/categories" component={Categories} /><Route path="/settings/user-management" component={UserManagement} /><Route path="/404" component={NotFound} /><Route component={NotFound} /></Switch></DashboardLayout>;
 }
 
 function App() {

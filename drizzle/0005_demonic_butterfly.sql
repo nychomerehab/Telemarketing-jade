@@ -1,0 +1,2 @@
+ALTER TABLE `sales` ADD `clientStatus` enum('no_status','shipped','delivered','returned') DEFAULT 'no_status' NOT NULL;--> statement-breakpoint
+ALTER TABLE `sales` ADD `commissionAmount` decimal(12,2) DEFAULT '0.00' NOT NULL;

@@ -1,6 +1,5 @@
-import { and, desc, eq, gte, like, lt, or } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { and, desc, eq, gte, inArray, isNull, like, lt, or } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/mysql2";
 import {
   auditLogs,
   InsertSale,
@@ -15,7 +14,7 @@ let _db: ReturnType<typeof drizzle> | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
-    try { _db = drizzle(postgres(process.env.DATABASE_URL, { prepare: false })); }
+    try { _db = drizzle(process.env.DATABASE_URL); }
     catch (error) { console.warn("[Database] Failed to connect:", error); _db = null; }
   }
   return _db;
@@ -36,7 +35,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
   values.lastSignedIn ??= new Date();
   if (!Object.keys(updateSet).length) updateSet.lastSignedIn = new Date();
-  await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
+  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -81,6 +80,21 @@ export async function getAgentUsers(search?: string, status?: "active" | "inacti
     .orderBy(desc(users.createdAt));
 }
 
+export async function getUserAccounts(search?: string, status?: "active" | "inactive") {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = status ? [eq(users.status, status)] : [];
+  if (search?.trim()) {
+    const term = `%${search.trim()}%`;
+    conditions.push(or(like(users.name, term), like(users.username, term))!);
+  }
+  return db
+    .select({ id: users.id, name: users.name, username: users.username, role: users.role, status: users.status, email: users.email, contactNumber: users.contactNumber, dateStarted: users.dateStarted, notes: users.notes, createdAt: users.createdAt, lastSignedIn: users.lastSignedIn })
+    .from(users)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(desc(users.createdAt));
+}
+
 export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
@@ -116,22 +130,38 @@ export async function getCategoryById(id: number) {
 export async function insertSale(value: InsertSale) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  const [created] = await db.insert(sales).values(value).returning();
-  return created;
+  const result = await db.insert(sales).values(value);
+  const id = Number(result[0].insertId);
+  const created = await db.select().from(sales).where(eq(sales.id, id)).limit(1);
+  return created[0];
 }
 
 export async function getSalesForUser(agentId: number, limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({ sale: sales, categoryName: salesCategories.name }).from(sales).leftJoin(salesCategories, eq(sales.categoryId, salesCategories.id)).where(eq(sales.agentId, agentId)).orderBy(desc(sales.saleDate), desc(sales.createdAt)).limit(limit);
+  return db.select({ sale: sales, categoryName: salesCategories.name }).from(sales).leftJoin(salesCategories, eq(sales.categoryId, salesCategories.id)).where(and(eq(sales.agentId, agentId), isNull(sales.deletedAt))).orderBy(desc(sales.saleDate), desc(sales.createdAt)).limit(limit);
 }
 
 export async function getSalesBetween(start: string, end: string, agentId?: number) {
   const db = await getDb();
   if (!db) return [];
-  const conditions = [gte(sales.saleDate, start), lt(sales.saleDate, end)];
+  const conditions = [gte(sales.saleDate, start), lt(sales.saleDate, end), isNull(sales.deletedAt)];
   if (agentId !== undefined) conditions.push(eq(sales.agentId, agentId));
   return db.select({ sale: sales, categoryName: salesCategories.name, agentName: users.name, agentEmail: users.email }).from(sales).leftJoin(salesCategories, eq(sales.categoryId, salesCategories.id)).leftJoin(users, eq(sales.agentId, users.id)).where(and(...conditions)).orderBy(desc(sales.saleDate), desc(sales.createdAt));
+}
+
+export async function updateSalesStatus(ids: number[], status: "no_status" | "shipped" | "delivered" | "returned", commissionAmount: string, agentId?: number) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return;
+  const conditions = [inArray(sales.id, ids)];
+  if (agentId !== undefined) conditions.push(eq(sales.agentId, agentId));
+  await db.update(sales).set({ clientStatus: status, commissionAmount }).where(and(...conditions));
+}
+
+export async function softDeleteSale(id: number, deletedBy: number, deleteReason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.update(sales).set({ deletedAt: new Date(), deletedBy, deleteReason }).where(and(eq(sales.id, id), isNull(sales.deletedAt)));
 }
 
 export type SaleWithCategory = Awaited<ReturnType<typeof getSalesForUser>>[number];
