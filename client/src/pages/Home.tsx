@@ -45,9 +45,10 @@ function AgentHome() {
 }
 
 function AdminHome() {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(localDate);
   const queryInput = useMemo(() => ({ date: selectedDate }), [selectedDate]);
-  const { data, isLoading, error } = trpc.admin.overview.useQuery(queryInput);
+  const { data, isLoading, error } = trpc.admin.overview.useQuery(queryInput, { enabled: user?.role === "admin" });
   return (
     <div className="min-h-screen px-5 py-7 md:px-10 md:py-10 max-w-[1440px] mx-auto">
       <header className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between mb-9"><div><p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ef7b55]">Super admin workspace</p><h1 className="mt-2 text-4xl md:text-5xl font-semibold tracking-[-0.05em] text-[#143f35]">BELIEVE 信じる</h1><p className="mt-2 text-[#6b7c73]">Monitor today’s pace and keep your team’s data clean.</p></div><Link href="/team" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-[#dbe6df] px-5 py-3 text-sm font-semibold text-[#143f35] hover:border-[#143f35] transition-colors"><Users className="h-4 w-4" /> View team sales</Link></header>
