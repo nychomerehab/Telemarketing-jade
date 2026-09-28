@@ -43,6 +43,13 @@
       "when": 1790399373064,
       "tag": "0005_demonic_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1790574379842,
+      "tag": "0006_soft_justice",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@ import {
   getUserByUsername,
   insertAuditLog,
   insertSale,
+  softDeleteSale,
   updateSalesStatus,
 } from "./db";
 import { auditLogs, sales, salesCategories, users } from "../drizzle/schema";
@@ -144,6 +145,7 @@ export const appRouter = router({
     mine: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(200).default(100) }).optional()).query(({ ctx, input }) => getSalesForUser(ctx.user.id, input?.limit ?? 100)),
     updateStatus: adminProcedure.input(z.object({ id: z.number().int().positive(), status: clientStatusInput })).mutation(async ({ input }) => { const rows = await getSalesBetween("2000-01-01", "2999-01-01"); const row = rows.find((item) => item.sale.id === input.id); if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Sale not found" }); const commission = calculateAgentCommission(row.sale, input.status); await updateSalesStatus([input.id], input.status, commission.toFixed(2)); return { success: true, commission: commission.toFixed(2) } as const; }),
     batchUpdateStatus: adminProcedure.input(z.object({ ids: z.array(z.number().int().positive()).min(1).max(200), status: clientStatusInput })).mutation(async ({ input }) => { const rows = await getSalesBetween("2000-01-01", "2999-01-01"); const selected = rows.filter((item) => input.ids.includes(item.sale.id)); if (selected.length !== input.ids.length) throw new TRPCError({ code: "NOT_FOUND", message: "One or more sales were not found." }); for (const row of selected) await updateSalesStatus([row.sale.id], input.status, calculateAgentCommission(row.sale, input.status).toFixed(2)); return { success: true, updated: selected.length } as const; }),
+    delete: adminProcedure.input(z.object({ id: z.number().int().positive(), reason: z.string().trim().min(2).max(255) })).mutation(async ({ ctx, input }) => { const rows = await getSalesBetween("2000-01-01", "2999-01-01"); const row = rows.find((item) => item.sale.id === input.id); if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Sale not found" }); await softDeleteSale(input.id, ctx.user.id, input.reason); await insertAuditLog({ adminId: ctx.user.id, action: `Sales Record Deleted: ${row.sale.customerName} | Agent: ${row.agentName || "Unassigned"} | Date: ${row.sale.saleDate} | Total: ${row.sale.totalPosSales} | Reason: ${input.reason}` }); return { success: true } as const; }),
     dashboard: protectedProcedure.input(dashboardDateInput).query(async ({ ctx, input }) => { const selectedDate = input?.date ?? dateKey(); const tomorrow = nextDayKey(selectedDate); const month = monthStartFromKey(selectedDate); const [todayRows, monthRows] = await Promise.all([getSalesBetween(selectedDate, tomorrow, ctx.user.id), getSalesBetween(month, nextMonthFromKey(selectedDate), ctx.user.id)]); return { selectedDate, today: summarize(todayRows), month: summarize(monthRows) }; }),
   }),
   admin: router({

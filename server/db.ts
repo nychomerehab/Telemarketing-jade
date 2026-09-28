@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, like, lt, or } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull, like, lt, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   auditLogs,
@@ -139,13 +139,13 @@ export async function insertSale(value: InsertSale) {
 export async function getSalesForUser(agentId: number, limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({ sale: sales, categoryName: salesCategories.name }).from(sales).leftJoin(salesCategories, eq(sales.categoryId, salesCategories.id)).where(eq(sales.agentId, agentId)).orderBy(desc(sales.saleDate), desc(sales.createdAt)).limit(limit);
+  return db.select({ sale: sales, categoryName: salesCategories.name }).from(sales).leftJoin(salesCategories, eq(sales.categoryId, salesCategories.id)).where(and(eq(sales.agentId, agentId), isNull(sales.deletedAt))).orderBy(desc(sales.saleDate), desc(sales.createdAt)).limit(limit);
 }
 
 export async function getSalesBetween(start: string, end: string, agentId?: number) {
   const db = await getDb();
   if (!db) return [];
-  const conditions = [gte(sales.saleDate, start), lt(sales.saleDate, end)];
+  const conditions = [gte(sales.saleDate, start), lt(sales.saleDate, end), isNull(sales.deletedAt)];
   if (agentId !== undefined) conditions.push(eq(sales.agentId, agentId));
   return db.select({ sale: sales, categoryName: salesCategories.name, agentName: users.name, agentEmail: users.email }).from(sales).leftJoin(salesCategories, eq(sales.categoryId, salesCategories.id)).leftJoin(users, eq(sales.agentId, users.id)).where(and(...conditions)).orderBy(desc(sales.saleDate), desc(sales.createdAt));
 }
@@ -156,6 +156,12 @@ export async function updateSalesStatus(ids: number[], status: "no_status" | "sh
   const conditions = [inArray(sales.id, ids)];
   if (agentId !== undefined) conditions.push(eq(sales.agentId, agentId));
   await db.update(sales).set({ clientStatus: status, commissionAmount }).where(and(...conditions));
+}
+
+export async function softDeleteSale(id: number, deletedBy: number, deleteReason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.update(sales).set({ deletedAt: new Date(), deletedBy, deleteReason }).where(and(eq(sales.id, id), isNull(sales.deletedAt)));
 }
 
 export type SaleWithCategory = Awaited<ReturnType<typeof getSalesForUser>>[number];
