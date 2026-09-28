@@ -136,7 +136,7 @@ export const appRouter = router({
     }),
   }),
   categories: router({
-    list: protectedProcedure.query(({ ctx }) => getCategories(ctx.user.role === "admin")),
+    list: publicProcedure.query(() => getCategories(false)),
     create: adminProcedure.input(z.object({ name: z.string().trim().min(2).max(120) })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); const existing = await db.select().from(salesCategories).where(eq(salesCategories.name, input.name)).limit(1); if (existing.length) throw new TRPCError({ code: "CONFLICT", message: "That category already exists" }); await db.insert(salesCategories).values({ name: input.name, isActive: 1 }); return { success: true } as const; }),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), name: z.string().trim().min(2).max(120) })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); await db.update(salesCategories).set({ name: input.name }).where(eq(salesCategories.id, input.id)); return { success: true } as const; }),
     toggle: adminProcedure.input(z.object({ id: z.number().int().positive(), isActive: z.boolean() })).mutation(async ({ input }) => { const db = await getDb(); if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is not available" }); await db.update(salesCategories).set({ isActive: input.isActive ? 1 : 0 }).where(eq(salesCategories.id, input.id)); return { success: true } as const; }),
