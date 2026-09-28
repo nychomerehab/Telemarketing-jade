@@ -6,7 +6,7 @@ import { Link } from "wouter";
 const currency = (value: number | string | null | undefined) => new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(Number(value ?? 0));
 const date = (value: string | null | undefined) => value ? new Date(`${value}T12:00:00`).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" }) : "—";
 const whole = (value: number | string | null | undefined) => new Intl.NumberFormat("en-PH").format(Number(value ?? 0));
-const paymentStatus = (value: string) => value === "initial_payment" ? "Advance / initial" : value === "fully_paid" ? "Fully paid" : "No payment";
+const paymentStatus = (value: string) => value === "initial_payment" ? "Advance / initial" : value === "fully_paid" ? "Fully paid" : "COD";
 const paymentMethod = (value: string | null) => ({ cash: "Cash", gcash: "GCash", bank_transfer: "Bank transfer", card: "Card", other: "Other" } as Record<string, string>)[value || ""] || "—";
 const clientStatus = (value: string) => value === "delivered" ? "DELIVERED" : value === "returned" ? "RETURNED" : value === "shipped" ? "SHIPPED" : "NO STATUS";
 

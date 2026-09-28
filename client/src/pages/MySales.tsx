@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 const currency = (value: number | string | null | undefined) => new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", minimumFractionDigits: 2 }).format(Number(value ?? 0));
 const date = (value: string | null | undefined) => value ? new Date(`${value}T12:00:00`).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" }) : "—";
-const paymentStatus = (value: string) => value === "initial_payment" ? "Advance / initial" : value === "fully_paid" ? "Fully paid" : "No payment";
+const paymentStatus = (value: string) => value === "initial_payment" ? "Advance / initial" : value === "fully_paid" ? "Fully paid" : "COD";
 const paymentMethod = (value: string | null) => ({ cash: "Cash", gcash: "GCash", bank_transfer: "Bank transfer", card: "Card", other: "Other" } as Record<string, string>)[value || ""] || "—";
 const clientStatus = (value: string) => value === "delivered" ? "DELIVERED" : value === "returned" ? "RETURNED" : value === "shipped" ? "SHIPPED" : "NO STATUS";
 const statusTone = (value: string) => value === "delivered" ? "bg-[#d7eee4] text-[#143f35]" : value === "returned" ? "bg-[#fff1ea] text-[#9b5c47]" : value === "shipped" ? "bg-[#e8f3ed] text-[#527064]" : "bg-[#f3f6f3] text-[#8a9d92]";
