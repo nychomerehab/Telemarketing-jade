@@ -18,7 +18,6 @@ const metrics = [
   ["Warm Leads / Outbound", "warmLeads", PhoneCall, "neutral"],
   ["Landing Page With Upsell", "hotleads", Flame, "neutral"],
   ["Advance Payments", "initialPayments", Sparkles, "warm"],
-  ["Outstanding Balance", "outstandingBalance", CreditCard, "neutral"],
   ["Commission", "commission", Percent, "neutral"],
 ] as const;
 
