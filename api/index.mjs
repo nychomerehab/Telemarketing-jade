@@ -927,6 +927,7 @@ function nextMonthFromKey(key) {
 function summarize(rows) {
   return rows.reduce((summary, { sale }) => {
     summary.totalPosSales += money(sale.totalPosSales);
+    summary.totalGrossSales += calculateGrossSales(sale);
     summary.orders += 1;
     summary.landingPage += money(sale.landingPageInitialOrder);
     summary.reseller += money(sale.resellerDistributorPackage);
@@ -940,7 +941,7 @@ function summarize(rows) {
     summary.ordersWithInitialPayment += sale.paymentStatus !== "no_payment" ? 1 : 0;
     summary.commission += money(sale.commissionAmount);
     return summary;
-  }, { totalPosSales: 0, orders: 0, landingPage: 0, reseller: 0, messaging: 0, warmLeads: 0, hotleads: 0, externalSales: 0, advancedPayments: 0, initialPayments: 0, outstandingBalance: 0, ordersWithInitialPayment: 0, commission: 0 });
+  }, { totalPosSales: 0, totalGrossSales: 0, orders: 0, landingPage: 0, reseller: 0, messaging: 0, warmLeads: 0, hotleads: 0, externalSales: 0, advancedPayments: 0, initialPayments: 0, outstandingBalance: 0, ordersWithInitialPayment: 0, commission: 0 });
 }
 function matchesReportCategory(row, categoryId, categoryName) {
   if (row.sale.categoryId !== null && row.sale.categoryId !== void 0) return Number(row.sale.categoryId) === categoryId;
@@ -1134,7 +1135,7 @@ var appRouter = router({
       for (const row of monthRows) {
         const id = row.sale.agentId;
         const current = byAgent.get(id) ?? { name: row.agentName || "Unassigned", email: row.agentEmail ?? null, total: 0, orders: 0 };
-        current.total += money(row.sale.totalPosSales);
+        current.total += calculateGrossSales(row.sale);
         current.orders += 1;
         byAgent.set(id, current);
       }
@@ -1154,12 +1155,12 @@ var appRouter = router({
       const reportRows = searchTerm ? categorizedRows.filter((row) => row.sale.customerName.toLowerCase().includes(searchTerm)) : categorizedRows;
       return { selectedDate, today: summarize(todayRows), month: summarize(monthRows), agents: Array.from(byAgent.values()).sort((a, b) => b.total - a.total), agentPerformance, recentSales: recentRows.slice(0, 30), report: { summary: summarize(reportRows), rows: reportRows } };
     }),
-    drilldown: adminProcedure.input(z2.object({ metric: z2.enum(["totalPosSales", "orders", "landingPage", "reseller", "messaging", "warmLeads", "hotleads", "initialPayments", "outstandingBalance", "commission"]), period: z2.enum(["today", "month"]), date: z2.string().regex(/^\d{4}-\d{2}-\d{2}$/) })).query(async ({ input }) => {
+    drilldown: adminProcedure.input(z2.object({ metric: z2.enum(["totalGrossSales", "totalPosSales", "orders", "landingPage", "reseller", "messaging", "warmLeads", "hotleads", "initialPayments", "outstandingBalance", "commission"]), period: z2.enum(["today", "month"]), date: z2.string().regex(/^\d{4}-\d{2}-\d{2}$/) })).query(async ({ input }) => {
       const start = input.period === "today" ? input.date : monthStartFromKey(input.date);
       const end = input.period === "today" ? nextDayKey(input.date) : nextMonthFromKey(input.date);
       const allRows = await getSalesBetween(start, end);
-      const rows = allRows.filter(({ sale }) => input.metric === "orders" || input.metric === "totalPosSales" ? true : input.metric === "landingPage" ? money(sale.landingPageInitialOrder) > 0 : input.metric === "reseller" ? money(sale.resellerDistributorPackage) > 0 : input.metric === "messaging" ? money(sale.messaging) > 0 : input.metric === "warmLeads" ? money(sale.warmLeadsOutboundCalls) > 0 : input.metric === "hotleads" ? money(sale.hotleadsUpsellCalls) > 0 : input.metric === "initialPayments" ? calculatePaidAmount(sale) > 0 : input.metric === "outstandingBalance" ? calculateGrossSales(sale) - calculatePaidAmount(sale) > 0 : sale.clientStatus === "delivered" && money(sale.commissionAmount) > 0);
-      const total = rows.reduce((sum, { sale }) => sum + (input.metric === "commission" ? money(sale.commissionAmount) : input.metric === "initialPayments" ? calculatePaidAmount(sale) : input.metric === "outstandingBalance" ? Math.max(0, calculateGrossSales(sale) - calculatePaidAmount(sale)) : input.metric === "landingPage" ? money(sale.landingPageInitialOrder) : input.metric === "reseller" ? money(sale.resellerDistributorPackage) : input.metric === "messaging" ? money(sale.messaging) : input.metric === "warmLeads" ? money(sale.warmLeadsOutboundCalls) : input.metric === "hotleads" ? money(sale.hotleadsUpsellCalls) : money(sale.totalPosSales)), 0);
+      const rows = allRows.filter(({ sale }) => input.metric === "orders" || input.metric === "totalPosSales" || input.metric === "totalGrossSales" ? true : input.metric === "landingPage" ? money(sale.landingPageInitialOrder) > 0 : input.metric === "reseller" ? money(sale.resellerDistributorPackage) > 0 : input.metric === "messaging" ? money(sale.messaging) > 0 : input.metric === "warmLeads" ? money(sale.warmLeadsOutboundCalls) > 0 : input.metric === "hotleads" ? money(sale.hotleadsUpsellCalls) > 0 : input.metric === "initialPayments" ? calculatePaidAmount(sale) > 0 : input.metric === "outstandingBalance" ? calculateGrossSales(sale) - calculatePaidAmount(sale) > 0 : sale.clientStatus === "delivered" && money(sale.commissionAmount) > 0);
+      const total = rows.reduce((sum, { sale }) => sum + (input.metric === "commission" ? money(sale.commissionAmount) : input.metric === "initialPayments" ? calculatePaidAmount(sale) : input.metric === "outstandingBalance" ? Math.max(0, calculateGrossSales(sale) - calculatePaidAmount(sale)) : input.metric === "totalGrossSales" ? calculateGrossSales(sale) : input.metric === "landingPage" ? money(sale.landingPageInitialOrder) : input.metric === "reseller" ? money(sale.resellerDistributorPackage) : input.metric === "messaging" ? money(sale.messaging) : input.metric === "warmLeads" ? money(sale.warmLeadsOutboundCalls) : input.metric === "hotleads" ? money(sale.hotleadsUpsellCalls) : money(sale.totalPosSales)), 0);
       return { metric: input.metric, period: input.period, total, orders: rows.length, agents: new Set(rows.map((row) => row.sale.agentId)).size, rows: rows.map((row) => ({ ...row, categoryName: row.categoryName || "Uncategorized (legacy record)" })) };
     })
   })
