@@ -292,7 +292,8 @@ async function updateSalesStatus(ids, status, commissionAmount, agentId) {
 async function softDeleteSale(id, deletedBy, deleteReason) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  await db.update(sales).set({ deletedAt: /* @__PURE__ */ new Date(), deletedBy, deleteReason, updatedAt: /* @__PURE__ */ new Date() }).where(and(eq(sales.id, id), isNull(sales.deletedAt)));
+  const result = await db.update(sales).set({ deletedAt: /* @__PURE__ */ new Date(), deletedBy, deleteReason, updatedAt: /* @__PURE__ */ new Date() }).where(and(eq(sales.id, id), isNull(sales.deletedAt))).returning({ id: sales.id });
+  return result.length > 0;
 }
 var _db, _pool;
 var init_db = __esm({
@@ -1095,7 +1096,8 @@ var appRouter = router({
       const row = rows.find((item) => item.sale.id === input.id);
       if (!row) throw new TRPCError3({ code: "NOT_FOUND", message: "Sale not found" });
       if (ctx.user.role !== "admin" && row.sale.agentId !== ctx.user.id) throw new TRPCError3({ code: "FORBIDDEN", message: "You can only delete your own sales." });
-      await softDeleteSale(input.id, ctx.user.id, input.reason);
+      const deleted = await softDeleteSale(input.id, ctx.user.id, input.reason);
+      if (!deleted) throw new TRPCError3({ code: "CONFLICT", message: "This sales record was already deleted or no longer exists." });
       if (ctx.user.role === "admin") await insertAuditLog({ adminId: ctx.user.id, action: `Sales Record Deleted: ${row.sale.customerName} | Agent: ${row.agentName || "Unassigned"} | Date: ${row.sale.saleDate} | Total: ${row.sale.totalPosSales} | Reason: ${input.reason}` });
       return { success: true };
     }),
