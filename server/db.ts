@@ -181,7 +181,8 @@ export async function updateSalesStatus(ids: number[], status: "no_status" | "sh
 export async function softDeleteSale(id: number, deletedBy: number, deleteReason: string) {
   const db = await getDb();
   if (!db) throw new Error("Database is not available");
-  await db.update(sales).set({ deletedAt: new Date(), deletedBy, deleteReason, updatedAt: new Date() }).where(and(eq(sales.id, id), isNull(sales.deletedAt)));
+  const result = await db.update(sales).set({ deletedAt: new Date(), deletedBy, deleteReason, updatedAt: new Date() }).where(and(eq(sales.id, id), isNull(sales.deletedAt))).returning({ id: sales.id });
+  return result.length > 0;
 }
 
 export type SaleWithCategory = Awaited<ReturnType<typeof getSalesForUser>>[number];
