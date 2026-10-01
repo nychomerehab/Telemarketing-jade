@@ -12,7 +12,8 @@ const grossSales = (sale: any) => Number(sale?.totalPosSales ?? 0) + Number(sale
 
 const metrics = [
   ["Total Gross Sales", "totalGrossSales", CreditCard, "accent"],
-  ["Total POS Sales", "totalPosSales", CreditCard, "neutral"],
+  ["Total POS Sales", "outstandingBalance", CreditCard, "neutral"],
+  ["Advance Payments", "initialPayments", CreditCard, "neutral"],
   ["Total Orders", "orders", ClipboardList, "neutral"],
   ["Landing Page Sales", "landingPage", ShoppingBag, "neutral"],
   ["Reseller / Distributor", "reseller", Package, "neutral"],
